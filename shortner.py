@@ -64,11 +64,7 @@ class URLShortener:
             short_code = self._generate_short_code()
         self.url_map[short_code] = long_url
         return self.base_url + short_code
-        short_code = self._generate_short_code()
-        while short_code in self.url_map:
-            short_code = self._generate_short_code()
-        self.url_map[short_code] = long_url
-        return self.base_url + short_code
+        
 
     def resolve_url(self, short_url):
         """
