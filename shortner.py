@@ -1,5 +1,6 @@
 import string
 import random
+import sys
 
 class URLShortener:
     def __init__(self):
@@ -85,7 +86,30 @@ class URLShortener:
         return self.url_map.get(short_code, "URL not found.")
 
 # Example usage
-shortener = URLShortener()
-short = shortener.shorten_url("https://en.wikipedia.org/wiki/Main_Page")
-print("Short URL:", short)
-print("Resolved:", shortener.resolve_url(short))
+# shortener = URLShortener()
+# short = shortener.shorten_url("https://en.wikipedia.org/wiki/Main_Page")
+# print("Short URL:", short)
+# print("Resolved:", shortener.resolve_url(short))
+
+def print_usage():
+    print("Usage:")
+    print("  python shortner.py shorten <long_url>")
+    print("  python shortner.py resolve <short_url>")
+    sys.exit(1)
+
+if __name__ == "__main__":
+    if len(sys.argv) != 3:
+        print_usage()
+
+    command = sys.argv[1]
+    value = sys.argv[2]
+    shortener = URLShortener()
+
+    if command == "shorten":
+        short_url = shortener.shorten_url(value)
+        print("Short URL:", short_url)
+    elif command == "resolve":
+        long_url = shortener.resolve_url(value)
+        print("Original URL:", long_url)
+    else:
+        print_usage()
