@@ -94,49 +94,7 @@ class URLShortener:
                 "reverse_map": self.reverse_map
             }, f, indent=2)
 
-    
-    def shorten_url(self, long_url):
-        """
-        Shortens the provided long URL by generating a unique short code and appending it to the base URL.
-        
-        Parameters:
-            long_url (str): The original URL to shorten.
-        
-        Returns:
-            str: The complete shortened URL, composed of the base URL and the unique short code.
-        
-        Notes:
-            - If the long URL has already been shortened, the existing short URL is returned.
-            - The method generates a short code using an internal helper method (_generate_short_code).
-            - It ensures uniqueness by checking the generated code against an existing url mapping (self.url_map)
-              and regenerates it if a collision is found.
-        """
-        # Check if the long URL has already been shortened
-        for code, url in self.url_map.items():
-            if url == long_url:
-                return self.base_url + code
-        
-        short_code = self._generate_short_code()
-        while short_code in self.url_map:
-            short_code = self._generate_short_code()
-        self.url_map[short_code] = long_url
-        return self.base_url + short_code
-        
 
-    def resolve_url(self, short_url):
-        """
-        Resolve a short URL to its corresponding original URL.
-
-        Args:
-            short_url (str): The shortened URL from which the unique short code is extracted. 
-                             The code is expected to be the last segment of the URL.
-
-        Returns:
-            str: The original URL if the corresponding short code exists in the mapping,
-                 otherwise returns "URL not found.".
-        """
-        short_code = short_url.split('/')[-1]
-        return self.url_map.get(short_code, "URL not found.")
 
 # Example usage
 # shortener = URLShortener()
