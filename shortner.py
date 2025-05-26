@@ -2,41 +2,98 @@ import string
 import random
 import sys
 
+import json
+import os
+
 class URLShortener:
-    def __init__(self):
+    def __init__(self, data_file='data.json'):
+        self.data_file = data_file
         self.url_map = {}
+        self.reverse_map = {}  # long_url -> short_code (for deduplication)
         self.base_url = "http://short.ly/"
-    
+        self._load_data()
+
     def _generate_short_code(self, length=6):
-        """
-        Generate a random short code using a combination of ASCII letters and digits.
-        
-        This method creates a pseudo-random string intended as a unique identifier for a shortened URL.
-        It selects characters randomly from uppercase and lowercase ASCII letters and digits.
-        The length of the generated code is configurable through the 'length' parameter (default is 6).
-        
-        Parameters:
-            length (int): The number of characters to include in the generated short code (default is 6).
-        
-        Returns:
-            str: A string representing the generated short code.
-        
-        Security Note:
-            - Utilizes the random.choices function to select characters.
-            - Draws from a pool of characters provided by string.ascii_letters and string.digits.
-            - Designed to be called repeatedly until a unique code is obtained within the URL mapping.
-        
-        Security Note:
-            Since this method depends on the Python random module's pseudo-random number generator,
-            it should not be used for cryptographic or security-sensitive applications.
-        
-        Examples:
-            >>> shortener = URLShortener()
-            >>> code = shortener._generate_short_code()
-            >>> len(code)
-            6
-        """
+        import random, string
         return ''.join(random.choices(string.ascii_letters + string.digits, k=length))
+
+    def shorten_url(self, long_url):
+        """
+        Shortens a given URL by generating a unique short code and mapping it to the long URL.
+
+        This method checks if the URL has already been shortened before. If it has, returns the existing
+        shortened URL. Otherwise, generates a new short code, ensures it's unique, and creates
+        bi-directional mappings between the long URL and short code.
+
+        Args:
+            long_url (str): The original URL that needs to be shortened.
+
+        Returns:
+            str: The shortened URL consisting of the base URL concatenated with the short code.
+
+        Example:
+            >>> url_shortener = URLShortener()
+            >>> url_shortener.shorten_url("https://www.example.com/very/long/path")
+            'http://short.url/abc123'
+        """
+        if long_url in self.reverse_map:
+            return self.base_url + self.reverse_map[long_url]
+
+        short_code = self._generate_short_code()
+        while short_code in self.url_map:
+            short_code = self._generate_short_code()
+
+        self.url_map[short_code] = long_url
+        self.reverse_map[long_url] = short_code
+        self._save_data()
+        return self.base_url + short_code
+
+    def resolve_url(self, short_url):
+        short_code = short_url.split('/')[-1]
+        return self.url_map.get(short_code, "URL not found.")
+
+    def _load_data(self):
+        """
+        Load URL mapping data from a JSON file.
+
+        This method reads the stored URL mappings from a JSON file if it exists.
+        The data file contains two mappings:
+        - url_map: Maps shortened URLs to their original URLs
+        - reverse_map: Maps original URLs to their shortened versions
+
+        The mappings are loaded into the instance variables:
+        - self.url_map
+        - self.reverse_map
+
+        If the file doesn't exist, the mappings remain empty dictionaries.
+
+        Returns:
+            None
+        """
+        if os.path.exists(self.data_file):
+            with open(self.data_file, 'r') as f:
+                data = json.load(f)
+                self.url_map = data.get("url_map", {})
+                self.reverse_map = data.get("reverse_map", {})
+
+    def _save_data(self):
+        """Save URL mapping data to a JSON file.
+
+        This method persists both the URL mapping and reverse mapping dictionaries
+        to the specified data file in JSON format with proper indentation.
+
+        Returns:
+            None
+
+        Raises:
+            IOError: If there is an error writing to the data file.
+        """
+        with open(self.data_file, 'w') as f:
+            json.dump({
+                "url_map": self.url_map,
+                "reverse_map": self.reverse_map
+            }, f, indent=2)
+
     
     def shorten_url(self, long_url):
         """
