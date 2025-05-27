@@ -4,6 +4,8 @@ import sys
 
 import json
 import os
+import logging
+
 
 class URLShortener:
     def __init__(self, data_file='data.json'):
@@ -88,6 +90,8 @@ class URLShortener:
         Raises:
             IOError: If there is an error writing to the data file.
         """
+        logging.info("Saving to: %s", os.path.abspath(self.data_file))
+
         with open(self.data_file, 'w') as f:
             json.dump({
                 "url_map": self.url_map,

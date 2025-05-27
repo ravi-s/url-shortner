@@ -1,0 +1,58 @@
+from flask import Flask, request, jsonify
+from shortener import URLShortener
+
+"""Flask application for URL shortening service.
+
+This module provides HTTP endpoints for shortening URLs and resolving shortened URLs
+back to their original form. It uses the URLShortener class to handle the core
+URL shortening functionality.
+
+Endpoints:
+    POST /shorten: Shortens a long URL
+    GET /resolve/<short_code>: Resolves a short URL to its original long URL
+"""
+
+"""Shorten a long URL into a shorter version.
+    
+    Expects a POST request with JSON payload containing 'long_url' key.
+    
+    Returns:
+        JSON response with shortened URL or error message
+        200: Successfully shortened URL
+        400: Missing long_url in request
+    """
+
+"""Resolve a short URL back to its original long URL.
+    
+    Args:
+        short_code (str): The unique code part of the shortened URL
+    
+    Returns:
+        JSON response with original long URL or error message
+        200: Successfully resolved URL
+        404: Short URL not found
+"""
+
+app = Flask(__name__)
+shortener = URLShortener()
+
+@app.route('/shorten', methods=['POST'])
+def shorten():
+    data = request.get_json()
+    long_url = data.get('long_url')
+    if not long_url:
+        return jsonify({"error": "Missing long_url"}), 400
+
+    short_url = shortener.shorten_url(long_url)
+    return jsonify({"short_url": short_url})
+
+@app.route('/resolve/<short_code>', methods=['GET'])
+def resolve(short_code):
+    short_url = shortener.base_url + short_code
+    long_url = shortener.resolve_url(short_url)
+    if long_url == "URL not found.":
+        return jsonify({"error": "Short URL not found"}), 404
+    return jsonify({"long_url": long_url})
+
+if __name__ == '__main__':
+    app.run(debug=True)
