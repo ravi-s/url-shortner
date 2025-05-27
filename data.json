@@ -1,8 +1,18 @@
 {
   "url_map": {
-    "4eWVNA": "http://www.rediff.com"
+    "4eWVNA": "http://www.rediff.com",
+    "UHaRQT": "https://test.com",
+    "BzrKZ2": "http://www.google.com",
+    "37hD6P": "https://test-again.com",
+    "EIXM2S": "https://wikipedia.com",
+    "8sEA84": "https://www.ndtv.com"
   },
   "reverse_map": {
-    "http://www.rediff.com": "4eWVNA"
+    "http://www.rediff.com": "4eWVNA",
+    "https://test.com": "UHaRQT",
+    "http://www.google.com": "BzrKZ2",
+    "https://test-again.com": "37hD6P",
+    "https://wikipedia.com": "EIXM2S",
+    "https://www.ndtv.com": "8sEA84"
   }
 }

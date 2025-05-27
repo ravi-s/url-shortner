@@ -6,10 +6,16 @@ import json
 import os
 import logging
 
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)  # Or DEBUG if you want more detail
+
+
+logger.info("LOADED: shortener.py")
 
 class URLShortener:
     def __init__(self, data_file='data.json'):
-        self.data_file = data_file
+        
+        self.data_file = os.path.join(os.path.dirname(__file__), 'data.json')
         self.url_map = {}
         self.reverse_map = {}  # long_url -> short_code (for deduplication)
         self.base_url = "http://short.ly/"
@@ -38,6 +44,7 @@ class URLShortener:
             >>> url_shortener.shorten_url("https://www.example.com/very/long/path")
             'http://short.url/abc123'
         """
+        logger.info(f"SHORTEN called with: {long_url}")
         if long_url in self.reverse_map:
             return self.base_url + self.reverse_map[long_url]
 
@@ -90,7 +97,8 @@ class URLShortener:
         Raises:
             IOError: If there is an error writing to the data file.
         """
-        logging.info("Saving to: %s", os.path.abspath(self.data_file))
+        
+        logger.info("Saving to file...")
 
         with open(self.data_file, 'w') as f:
             json.dump({
@@ -108,11 +116,12 @@ class URLShortener:
 
 def print_usage():
     print("Usage:")
-    print("  python shortner.py shorten <long_url>")
-    print("  python shortner.py resolve <short_url>")
+    print("  python shortener.py shorten <long_url>")
+    print("  python shortener.py resolve <short_url>")
     sys.exit(1)
 
 if __name__ == "__main__":
+    
     if len(sys.argv) != 3:
         print_usage()
 
