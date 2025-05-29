@@ -5,7 +5,8 @@
     "BzrKZ2": "http://www.google.com",
     "37hD6P": "https://test-again.com",
     "EIXM2S": "https://wikipedia.com",
-    "8sEA84": "https://www.ndtv.com"
+    "8sEA84": "https://www.ndtv.com",
+    "bAfCJE": "https://developer.mozilla.com"
   },
   "reverse_map": {
     "http://www.rediff.com": "4eWVNA",
@@ -13,6 +14,7 @@
     "http://www.google.com": "BzrKZ2",
     "https://test-again.com": "37hD6P",
     "https://wikipedia.com": "EIXM2S",
-    "https://www.ndtv.com": "8sEA84"
+    "https://www.ndtv.com": "8sEA84",
+    "https://developer.mozilla.com": "bAfCJE"
   }
 }

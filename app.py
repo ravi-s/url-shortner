@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify
 from shortener import URLShortener
-import logging
+# import logging
 
 
 """Flask application for URL shortening service.
@@ -35,22 +35,14 @@ Endpoints:
         404: Short URL not found
 """
 
-
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s [%(levelname)s] %(message)s',
-)
 app = Flask(__name__)
 shortener = URLShortener()
 
-from flask import Flask
-import threading
-
-app = Flask(__name__)
-
 @app.route('/')
 def home():
-    return 'Flask app is running!'
+    """Home route for the Flask application."""
+    app.logger.debug("Home route accessed")
+    return 'Flask app is running.'
 
 
 
@@ -73,7 +65,7 @@ def resolve(short_code):
     return jsonify({"long_url": long_url})
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(port=6000, debug=True)
     # app.run(host='127.0.0.1', port=5000, debug=True)
 
 
