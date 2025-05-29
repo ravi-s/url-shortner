@@ -64,6 +64,13 @@ def resolve(short_code):
         return jsonify({"error": "Short URL not found"}), 404
     return jsonify({"long_url": long_url})
 
+@app.route('/list', methods=['GET'])
+def list_all():
+    """List all short → long URL mappings."""
+    url_map = shortener.get_all_mappings()
+    return jsonify(url_map)
+
+
 if __name__ == '__main__':
     app.run(port=6000, debug=True)
     # app.run(host='127.0.0.1', port=5000, debug=True)
