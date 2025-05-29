@@ -106,6 +106,12 @@ class URLShortener:
                 "reverse_map": self.reverse_map
             }, f, indent=2)
 
+    def get_all_mappings(self):
+        """
+            Returns a dictionary mapping of full short URLs to their long URLs.
+        """
+        return {self.base_url + code: url for code, url in self.url_map.items()}
+
 
 
 # Example usage
