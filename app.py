@@ -14,27 +14,6 @@ Endpoints:
     GET /resolve/<short_code>: Resolves a short URL to its original long URL
 """
 
-"""Shorten a long URL into a shorter version.
-    
-    Expects a POST request with JSON payload containing 'long_url' key.
-    
-    Returns:
-        JSON response with shortened URL or error message
-        200: Successfully shortened URL
-        400: Missing long_url in request
-    """
-
-"""Resolve a short URL back to its original long URL.
-    
-    Args:
-        short_code (str): The unique code part of the shortened URL
-    
-    Returns:
-        JSON response with original long URL or error message
-        200: Successfully resolved URL
-        404: Short URL not found
-"""
-
 app = Flask(__name__)
 shortener = URLShortener()
 
@@ -48,11 +27,24 @@ def home():
 
 @app.route('/shorten', methods=['POST'])
 def shorten():
+    """Shorten a long URL.
+    Expects a POST request with JSON payload containing 'long_url' key.
+    Returns:
+        JSON response with shortened URL or error message
+        200: Successfully shortened URL
+        400: Missing long_url in request
+    """
+    app.logger.debug("Shorten route accessed")
     data = request.get_json()
     long_url = data.get('long_url')
     if not long_url:
         return jsonify({"error": "Missing long_url"}), 400
 
+    result = shortener.shorten_url(long_url)
+
+    if isinstance(result, tuple):  # Means we got an error like ("Invalid URL", 400)
+        return jsonify({"error": result[0]}), result[1]
+    
     short_url = shortener.shorten_url(long_url)
     return jsonify({"short_url": short_url})
 
