@@ -6,6 +6,8 @@ import json
 import os
 import logging
 
+from urllib.parse import urlparse
+
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)  # Or DEBUG if you want more detail
 
@@ -45,6 +47,10 @@ class URLShortener:
             'http://short.url/abc123'
         """
         logger.info(f"SHORTEN called with: {long_url}")
+
+        if not self._is_valid_url(long_url):
+            return "Invalid URL", 400  # Return error message and HTTP status
+        
         if long_url in self.reverse_map:
             return self.base_url + self.reverse_map[long_url]
 
@@ -111,6 +117,14 @@ class URLShortener:
             Returns a dictionary mapping of full short URLs to their long URLs.
         """
         return {self.base_url + code: url for code, url in self.url_map.items()}
+    
+    def _is_valid_url(self, url):
+        """Check if the URL is syntactically valid."""
+        try:
+            result = urlparse(url)
+            return all([result.scheme, result.netloc])
+        except:
+            return False
 
 
 
