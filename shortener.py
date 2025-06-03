@@ -5,6 +5,7 @@ import sys
 import json
 import os
 import logging
+import time
 
 from urllib.parse import urlparse
 
@@ -27,7 +28,7 @@ class URLShortener:
         import random, string
         return ''.join(random.choices(string.ascii_letters + string.digits, k=length))
 
-    def shorten_url(self, long_url):
+    def shorten_url(self, long_url, expires_in = None):
         """
         Shortens a given URL by generating a unique short code and mapping it to the long URL.
 
@@ -46,26 +47,53 @@ class URLShortener:
             >>> url_shortener.shorten_url("https://www.example.com/very/long/path")
             'http://short.url/abc123'
         """
-        logger.info(f"SHORTEN called with: {long_url}")
+        logger.info(f"SHORTEN called with: {long_url}, expires_in={expires_in}")
 
-        if not self._is_valid_url(long_url):
-            return "Invalid URL", 400  # Return error message and HTTP status
-        
         if long_url in self.reverse_map:
-            return self.base_url + self.reverse_map[long_url]
+            short_code = self.reverse_map[long_url]
+            return self.base_url + short_code
 
-        short_code = self._generate_short_code()
-        while short_code in self.url_map:
-            short_code = self._generate_short_code()
+        short_code = self._get_unique_short_code()
 
-        self.url_map[short_code] = long_url
+        # Explicit variable for expiration timestamp
+        expiration_timestamp_or_None = time.time() + expires_in if expires_in else None
+
+        # Store both long URL and expiration in the map
+        self.url_map[short_code] = {
+            "long_url": long_url,
+            "expires_at": expiration_timestamp_or_None
+     }
+
         self.reverse_map[long_url] = short_code
         self._save_data()
         return self.base_url + short_code
 
     def resolve_url(self, short_url):
+
         short_code = short_url.split('/')[-1]
-        return self.url_map.get(short_code, "URL not found.")
+        entry = self.url_map.get(short_code)
+
+        if not entry:
+            return "URL not found."
+        # If using new format with expiration
+        if isinstance(entry, dict):
+            long_url = entry.get("long_url")
+            expires_at = entry.get("expires_at")
+
+        if expires_at and time.time() > expires_at:
+            logger.info(f"URL expired for short_code: {short_code}")
+            # Delete expired entry
+            del self.url_map[short_code]
+            if long_url in self.reverse_map:
+                del self.reverse_map[long_url]
+            self._save_data()
+            return "URL has expired."
+        else:
+            return long_url
+
+    # Fallback for old data format (string, no expiration)
+        return entry
+    
 
     def _load_data(self):
         """
@@ -125,6 +153,24 @@ class URLShortener:
             return all([result.scheme, result.netloc])
         except:
             return False
+        
+    def _get_unique_short_code(self, max_attempts=5):
+        """
+        Generate a unique short code, retrying if there's a collision.
+        Args:
+            max_attempts (int): Maximum number of attempts to generate a unique code.
+        Returns:
+            str: A unique short code.
+        Raises:
+            Exception: If a unique code cannot be generated after several attempts.
+        """
+        
+        for _ in range(max_attempts):
+            short_code = self._generate_short_code()
+            if short_code not in self.url_map:
+                return short_code
+        raise Exception("Failed to generate unique short code after several attempts.")
+
 
 
 
@@ -147,7 +193,11 @@ if __name__ == "__main__":
 
     command = sys.argv[1]
     value = sys.argv[2]
+
     shortener = URLShortener()
+    # Save the original method
+    original_generate = shortener._generate_short_code
+
 
     if command == "shorten":
         short_url = shortener.shorten_url(value)
