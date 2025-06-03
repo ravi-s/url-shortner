@@ -37,16 +37,14 @@ def shorten():
     app.logger.debug("Shorten route accessed")
     data = request.get_json()
     long_url = data.get('long_url')
+    expires_in = data.get('expires_in')  # This should be in seconds
+
     if not long_url:
         return jsonify({"error": "Missing long_url"}), 400
 
-    result = shortener.shorten_url(long_url)
+    result = shortener.shorten_url(long_url, expires_in)
 
-    if isinstance(result, tuple):  # Means we got an error like ("Invalid URL", 400)
-        return jsonify({"error": result[0]}), result[1]
-    
-    short_url = shortener.shorten_url(long_url)
-    return jsonify({"short_url": short_url})
+    return jsonify({"short_url": result})
 
 @app.route('/resolve/<short_code>', methods=['GET'])
 def resolve(short_code):
