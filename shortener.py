@@ -18,7 +18,7 @@ logger.info("LOADED: shortener.py")
 class URLShortener:
     def __init__(self, data_file='data.json'):
         
-        self.data_file = os.path.join(os.path.dirname(__file__), 'data.json')
+        self.data_file = os.path.join(os.path.dirname(__file__), data_file)
         self.url_map = {}
         self.reverse_map = {}  # long_url -> short_code (for deduplication)
         self.base_url = "http://short.ly/"
@@ -52,6 +52,14 @@ class URLShortener:
         if long_url in self.reverse_map:
             short_code = self.reverse_map[long_url]
             return self.base_url + short_code
+        
+        # Validate expires_in
+        if expires_in is not None:
+            if not isinstance(expires_in, (int, float)):
+                raise ValueError("expires_in must be a number (seconds from now)")
+            if expires_in < 0:
+                logger.warning(f"Expiration time is in the past: {expires_in} seconds")
+    
 
         short_code = self._get_unique_short_code()
 
@@ -80,7 +88,7 @@ class URLShortener:
             long_url = entry.get("long_url")
             expires_at = entry.get("expires_at")
 
-        if expires_at and time.time() > expires_at:
+        if expires_at and int(time.time()) > expires_at:
             logger.info(f"URL expired for short_code: {short_code}")
             # Delete expired entry
             del self.url_map[short_code]
@@ -170,6 +178,44 @@ class URLShortener:
             if short_code not in self.url_map:
                 return short_code
         raise Exception("Failed to generate unique short code after several attempts.")
+    
+    def get_stats(self):
+        """
+        Retrieve statistics about the URL shortener's stored data.
+
+        Returns:
+            dict: A dictionary containing:
+                - "total_urls" (int): Total number of URLs stored.
+                - "active_urls" (int): Number of active (non-expired) URLs.
+                - "expired_urls" (int): Number of expired URLs.
+                - "data_file_size" (int): Size of the data file in bytes.
+        """
+        total = 0
+        active = 0
+        expired = 0
+        now = int(time.time())
+
+        for entry in self.url_map.values():
+            if isinstance(entry, dict):
+                total += 1
+                expires_at = entry.get("expires_at")
+                if expires_at is None or expires_at > now:
+                    active += 1
+                else:
+                    expired += 1
+            else:
+                total += 1
+                active += 1  # Old format: no expiration
+
+        data_file_size = os.path.getsize(self.data_file) if os.path.exists(self.data_file) else 0
+
+        return {
+            "total_urls": total,
+            "active_urls": active,
+            "expired_urls": expired,
+            "data_file_size": data_file_size
+        }
+
 
 
 
