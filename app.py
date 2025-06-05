@@ -60,6 +60,11 @@ def list_all():
     url_map = shortener.get_all_mappings()
     return jsonify(url_map)
 
+@app.route('/stats', methods=['GET'])
+def stats():
+    """Return statistics about URL mappings."""
+    stats = shortener.get_stats()
+    return jsonify(stats)
 
 if __name__ == '__main__':
     app.run(port=6000, debug=True)
