@@ -1,38 +1,38 @@
 # model/db.py
 """
-This module sets up the database connection and session management for the URL shortener application.
+This module provides database utilities for managing SQLAlchemy sessions and engine creation.
 
 Classes:
-    Base: Declarative base class for defining ORM models.
+    Base: A declarative base class for defining ORM models.
 
 Functions:
-    get_session():
-        Context manager that provides a database session. It ensures that the session is committed
-        if no exceptions occur, or rolled back in case of an exception. The session is always closed
-        after use.
+    get_engine(db_uri="sqlite:///shortener.db"):
+        Creates and returns a SQLAlchemy engine for the given database URI.
 
-Constants:
-    DATABASE_URL (str): The URL for the SQLite database file.
-    engine: SQLAlchemy engine instance for connecting to the database.
-    SessionLocal: SQLAlchemy session factory for creating database sessions.
+    get_session_factory(db_uri="sqlite:///shortener.db"):
+        Creates and returns a SQLAlchemy session factory bound to the engine.
+
+    get_session(session_factory):
+        A context manager that provides a SQLAlchemy session, ensuring proper
+        handling of commit, rollback, and close operations.
 """
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 from contextlib import contextmanager
 
-# SQLite database file
-DATABASE_URL = "sqlite:///shortener.db"
-
-engine = create_engine(DATABASE_URL, echo=False)
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine, expire_on_commit=False)
-
-# Base class for all models
 Base = declarative_base()
 
+def get_engine(db_uri="sqlite:///shortener.db"):
+    return create_engine(db_uri, echo=False)
+
+def get_session_factory(db_uri="sqlite:///shortener.db"):
+    engine = get_engine(db_uri)
+    return sessionmaker(bind=engine, autocommit=False, autoflush=False, expire_on_commit=False)
+
 @contextmanager
-def get_session():
-    session = SessionLocal()
+def get_session(session_factory):
+    session = session_factory()
     try:
         yield session
         session.commit()
@@ -41,4 +41,5 @@ def get_session():
         raise
     finally:
         session.close()
+
 
