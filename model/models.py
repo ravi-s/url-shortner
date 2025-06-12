@@ -16,10 +16,9 @@ Classes:
         __repr__: Returns a string representation of the URLMap instance.
 """
 
+# model/url_map.py
 from sqlalchemy import Column, Integer, String, BigInteger
-from sqlalchemy.ext.declarative import declarative_base
-
-Base = declarative_base()
+from model.db import Base  # ✅ Import the shared Base
 
 class URLMap(Base):
     __tablename__ = 'url_map'
@@ -32,3 +31,4 @@ class URLMap(Base):
 
     def __repr__(self):
         return f"<URLMap(short_code='{self.short_code}', long_url='{self.long_url}')>"
+

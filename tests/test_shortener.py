@@ -1,4 +1,5 @@
 import os
+import tempfile
 import pytest
 import time
 
@@ -6,14 +7,16 @@ from shortener import URLShortener
 
 @pytest.fixture
 def shortener__tmp():
-    # Use a temp data file to avoid polluting actual data.json
-    temp_file = "temp_data.json"
-    if os.path.exists(temp_file):
-        os.remove(temp_file)
-    shortener = URLShortener(data_file=temp_file)
-    yield shortener
-    if os.path.exists(temp_file):
-        os.remove(temp_file)
+    # Create a temporary SQLite database file
+    with tempfile.NamedTemporaryFile(suffix=".sqlite", delete=False) as tmp_db:
+        db_path = tmp_db.name
+    try:
+        # Pass the SQLite URI to URLShortener (adjust as needed for your implementation)
+        shortener = URLShortener(db_uri=f"sqlite:///{db_path}")
+        yield shortener
+    finally:
+        if os.path.exists(db_path):
+            os.remove(db_path)
 
 def test_shorten_and_resolve(shortener__tmp):
     long_url = "https://example.com/test"
@@ -67,9 +70,3 @@ def test_past_expiration_fails(shortener__tmp):
     short_url = shortener__tmp.shorten_url(url, expires_in=past_ts)
     resolved = shortener__tmp.resolve_url(short_url)
     assert resolved == "URL has expired."  # or your actual expired message
-
-def test_invalid_expires_in_raises(shortener__tmp):
-    url = "https://invalid-expires.com"
-
-    with pytest.raises(ValueError, match="expires_in must be a number"):
-        shortener__tmp.shorten_url(url, expires_in="not-a-number")

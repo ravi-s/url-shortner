@@ -1,5 +1,7 @@
 from flask import Flask, request, jsonify
 from shortener import URLShortener
+
+from model import init_db
 # import logging
 
 
@@ -16,6 +18,9 @@ Endpoints:
 
 app = Flask(__name__)
 shortener = URLShortener()
+# Initialize the database
+init_db()
+
 
 @app.route('/')
 def home():
@@ -63,7 +68,7 @@ def list_all():
 @app.route('/stats', methods=['GET'])
 def stats():
     """Return statistics about URL mappings."""
-    stats = shortener.get_stats()
+    # stats = shortener.get_stats()
     return jsonify(stats)
 
 if __name__ == '__main__':
