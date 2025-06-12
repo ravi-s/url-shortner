@@ -11,9 +11,9 @@ Functions:
     init_db(): Creates all tables defined in the database models.
 """
 
-from .db import Base, engine
-from .models import URLMap  # Import all models here
+# from .db import Base
+# from .models import URLMap  # Import all models here
 
-# Create tables
-def init_db():
-    Base.metadata.create_all(bind=engine)
+# # Create tables
+# def init_db():
+#     Base.metadata.create_all(bind=engine)
