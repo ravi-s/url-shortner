@@ -1,7 +1,30 @@
-from flask import Flask, request, jsonify
+from flask import Flask
+from flask import render_template, request, redirect, url_for
+import logging
+from logging.handlers import RotatingFileHandler
 from shortener import URLShortener
 
-from model import init_db
+'''
+Flask application for URL shortening service.
+
+
+    GET /: Serves the main page with a form to shorten URLs.
+    POST /shorten: Shortens a long URL submitted via the form.
+    GET /s/<short_code>: Displays the shortened URL and resolves it to its original form.
+
+Classes:
+    URLShortener: Handles the core URL shortening and resolution logic.
+
+Functions:
+    index(): Serves the main page with a form to shorten URLs.
+    shorten(): Handles form submission to create a short URL.
+    show_short_url(short_code): Displays the shortened URL and resolves it to its original form.
+
+Usage:
+    Run this script to start the Flask development server. The application will be
+    accessible at http://localhost:6000.
+'''
+
 # import logging
 
 
@@ -17,62 +40,41 @@ Endpoints:
 """
 
 app = Flask(__name__)
-shortener = URLShortener()
-# Initialize the database
-init_db()
 
+# Configure logging
+logging.basicConfig(level=logging.DEBUG)
+handler = RotatingFileHandler('app.log', maxBytes=10000, backupCount=1)
+handler.setLevel(logging.DEBUG)
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+handler.setFormatter(formatter)
+app.logger.addHandler(handler)
+
+# app.py (add these)
+
+# (you already have) from shortener import URLShortener
+
+shortener = URLShortener()
 
 @app.route('/')
-def home():
-    """Home route for the Flask application."""
-    app.logger.debug("Home route accessed")
-    return 'Flask app is running.'
-
-
+def index():
+    """Serve the main page with form to shorten URLs."""
+    app.logger.info("Serving index page")
+    return render_template('index.html')
 
 @app.route('/shorten', methods=['POST'])
 def shorten():
-    """Shorten a long URL.
-    Expects a POST request with JSON payload containing 'long_url' key.
-    Returns:
-        JSON response with shortened URL or error message
-        200: Successfully shortened URL
-        400: Missing long_url in request
-    """
-    app.logger.debug("Shorten route accessed")
-    data = request.get_json()
-    long_url = data.get('long_url')
-    expires_in = data.get('expires_in')  # This should be in seconds
+    """Create a short URL from form submission."""
+    app.logger.info("Received request to shorten URL")
+    long_url = request.form['long_url']
 
-    if not long_url:
-        return jsonify({"error": "Missing long_url"}), 400
+    short_url = shortener.shorten_url(long_url)
+    return redirect(url_for('show_short_url', short_code=short_url.split('/')[-1]))
 
-    result = shortener.shorten_url(long_url, expires_in)
+@app.route('/s/<short_code>')
+def show_short_url(short_code):
 
-    return jsonify({"short_url": result})
+    """Displays the shortened URL after it's been created."""
+    app.logger.info(f"Resolving short code: {short_code}")
+    entry = shortener.resolve_url(f'{request.host_url}s/{short_code}')
 
-@app.route('/resolve/<short_code>', methods=['GET'])
-def resolve(short_code):
-    short_url = shortener.base_url + short_code
-    long_url = shortener.resolve_url(short_url)
-    if long_url == "URL not found.":
-        return jsonify({"error": "Short URL not found"}), 404
-    return jsonify({"long_url": long_url})
-
-@app.route('/list', methods=['GET'])
-def list_all():
-    """List all short → long URL mappings."""
-    url_map = shortener.get_all_mappings()
-    return jsonify(url_map)
-
-@app.route('/stats', methods=['GET'])
-def stats():
-    """Return statistics about URL mappings."""
-    # stats = shortener.get_stats()
-    return jsonify(stats)
-
-if __name__ == '__main__':
-    app.run(port=6000, debug=True)
-    # app.run(host='127.0.0.1', port=5000, debug=True)
-
-
+    return render_template('short_url.html', short_code=short_code, resolved=entry)
