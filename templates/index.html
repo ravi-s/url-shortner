@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8" />
+		<title>URL Shortener</title>
+		<link
+			rel="stylesheet"
+			href="{{ url_for('static', filename='style.css') }}"
+		/>
+	</head>
+	<body>
+		<h1>URL Shortener</h1>
+		<form action="/shorten" method="POST">
+			<!-- The type="url" attribute ensures the input is validated as a URL format by the browser, 
+				 and provides a better user experience by showing validation errors for incorrect URL formats -->
+			<input
+				name="long_url"
+				type="url"
+				placeholder="Enter your URL here"
+				required
+			/>
+			<button type="submit">Shorten</button>
+		</form>
+	</body>
+</html>
