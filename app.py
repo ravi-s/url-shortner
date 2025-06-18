@@ -39,7 +39,7 @@ Endpoints:
     GET /resolve/<short_code>: Resolves a short URL to its original long URL
 """
 
-app = Flask(__name__)
+app = app = Flask(__name__, static_folder="static", template_folder="templates")
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
