@@ -12,7 +12,7 @@ def shortener__tmp():
         db_path = tmp_db.name
     try:
         # Pass the SQLite URI to URLShortener (adjust as needed for your implementation)
-        shortener = URLShortener(db_uri=f"sqlite:///{db_path}")
+        shortener = URLShortener(db_uri=f"sqlite:///{db_path}", base_url="http://short.ly/")
         yield shortener
     finally:
         if os.path.exists(db_path):
@@ -21,7 +21,10 @@ def shortener__tmp():
 def test_shorten_and_resolve(shortener__tmp):
     long_url = "https://example.com/test"
     short_url = shortener__tmp.shorten_url(long_url)
+    # print(f"Shortened URL: {short_url}")  # Log the shortened URL
+
     resolved = shortener__tmp.resolve_url(short_url)
+    # print(f"Resolved URL: {resolved}")  # Log the resolved URL
     assert resolved == long_url
 
 def test_deduplication(shortener__tmp):
