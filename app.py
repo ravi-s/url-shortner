@@ -53,7 +53,7 @@ app.logger.addHandler(handler)
 
 # (you already have) from shortener import URLShortener
 
-shortener = URLShortener()
+shortener = URLShortener(base_url="http://short.ly/")
 
 @app.route('/')
 def index():
@@ -68,6 +68,7 @@ def shorten():
     long_url = request.form['long_url']
 
     short_url = shortener.shorten_url(long_url)
+    app.logger.info(f"Shortened URL: {short_url}")
     return redirect(url_for('show_short_url', short_code=short_url.split('/')[-1]))
 
 @app.route('/s/<short_code>')
