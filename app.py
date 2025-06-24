@@ -3,6 +3,7 @@ from flask import render_template, request, redirect, url_for
 import logging
 from logging.handlers import RotatingFileHandler
 from shortener import URLShortener
+from utils.rate_limiter import RateLimiter
 
 '''
 Flask application for URL shortening service.
@@ -25,21 +26,12 @@ Usage:
     accessible at http://localhost:6000.
 '''
 
-# import logging
 
-
-"""Flask application for URL shortening service.
-
-This module provides HTTP endpoints for shortening URLs and resolving shortened URLs
-back to their original form. It uses the URLShortener class to handle the core
-URL shortening functionality.
-
-Endpoints:
-    POST /shorten: Shortens a long URL
-    GET /resolve/<short_code>: Resolves a short URL to its original long URL
-"""
 
 app = app = Flask(__name__, static_folder="static", template_folder="templates")
+
+# Example: 5 requests per 60 seconds
+rate_limiter = RateLimiter(max_requests = 5, window_seconds = 60)
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
@@ -64,6 +56,12 @@ def index():
 @app.route('/shorten', methods=['POST'])
 def shorten():
     """Create a short URL from form submission."""
+    client_ip = request.remote_addr
+    if not rate_limiter.is_allowed(client_ip):
+        app.logger.info(f"Rate limit exceeded for {client_ip}")
+        return render_template('rate_limit.html'), 429
+    
+    app.logger.info(f"Rate limit check passed for {client_ip}")
     app.logger.info("Received request to shorten URL")
     long_url = request.form['long_url']
 
