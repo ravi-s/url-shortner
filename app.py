@@ -1,9 +1,10 @@
 from flask import Flask
-from flask import render_template, request, redirect, url_for
+from flask import render_template, request, redirect, url_for,jsonify
 import logging
 from logging.handlers import RotatingFileHandler
 from shortener import URLShortener
 from utils.rate_limiter import RateLimiter
+from functools import wraps
 
 '''
 Flask application for URL shortening service.
@@ -41,9 +42,22 @@ formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(messag
 handler.setFormatter(formatter)
 app.logger.addHandler(handler)
 
-# app.py (add these)
+# Example: Hardcoded valid API keys (set of strings)
+VALID_API_KEYS = {
+    "api_key_123",
+    "api_key_456",
+    "api_key_789"
+}
 
-# (you already have) from shortener import URLShortener
+def require_api_key(f):
+    """Decorator to enforce API key validation via request headers."""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        api_key = request.headers.get('x-api-key')
+        if not api_key or api_key not in VALID_API_KEYS:
+            return jsonify({"error": "Invalid or missing API key."}), 401
+        return f(*args, **kwargs)
+    return decorated_function
 
 shortener = URLShortener(base_url="http://short.ly/")
 
@@ -77,3 +91,22 @@ def show_short_url(short_code):
     entry = shortener.resolve_url(f'{request.host_url}s/{short_code}')
 
     return render_template('short_url.html', short_code=short_code, resolved=entry)
+
+@app.route('/api/shorten', methods=['POST'])
+@require_api_key
+def shorten_api():
+    """API-only URL shortening endpoint with API key and rate limiting."""
+    client_ip = request.remote_addr
+
+    # Rate limiting check
+    if not rate_limiter.is_allowed(client_ip):
+        app.logger.info(f"Rate limit exceeded for {client_ip}")
+        return jsonify({"error": "Rate limit exceeded. Try again later."}), 429
+
+    data = request.get_json()
+    long_url = data.get('long_url')
+    if not long_url:
+        return jsonify({"error": "Missing long_url"}), 400
+
+    short_url = shortener.shorten_url(long_url)
+    return jsonify({"short_url": short_url})
