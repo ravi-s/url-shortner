@@ -3,3 +3,4 @@ __pycache__/
 .vscode/settings.json
 data.json
 app.log
+test_redis.py
