@@ -3,8 +3,10 @@ from flask import render_template, request, redirect, url_for,jsonify
 import logging
 from logging.handlers import RotatingFileHandler
 from shortener import URLShortener
-from utils.rate_limiter import RateLimiter
 from functools import wraps
+
+import redis
+from utils.redis_rate_limiter import RedisRateLimiter
 
 '''
 Flask application for URL shortening service.
@@ -31,8 +33,15 @@ Usage:
 
 app = app = Flask(__name__, static_folder="static", template_folder="templates")
 
-# Example: 5 requests per 60 seconds
-rate_limiter = RateLimiter(max_requests = 5, window_seconds = 60)
+
+
+# Set this to your Redis Cloud URL
+REDIS_URL = "redis://:3jovYCcF0BqY68VIBBZdDLjUJsLG9KEd@redis-17837.c330.asia-south1-1.gce.redns.redis-cloud.com:17837"
+redis_client = redis.Redis.from_url(REDIS_URL, decode_responses=True)
+
+# Replace old limiter
+rate_limiter = RedisRateLimiter(redis_client, max_requests=5, window_seconds=60)
+
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
