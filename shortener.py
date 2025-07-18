@@ -25,12 +25,13 @@ Methods:
 class URLShortener:
     BASE_URL = "http://short.est/"
 
-    def __init__(self, db_uri="sqlite:///data.db", base_url=None):
+    def __init__(self, db_uri="sqlite:///data.db", base_url=None, redis_client=None):
         self.engine = get_engine(db_uri)
         Base.metadata.create_all(self.engine)
         self.Session = get_session_factory(db_uri)
         self.db_uri = db_uri
         self.base_url = base_url or self.BASE_URL
+        self.redis = redis_client
 
     def _generate_short_code(self, length=6):
         return ''.join(random.choices(string.ascii_letters + string.digits, k=length))
@@ -104,9 +105,17 @@ class URLShortener:
         """
         if not short_url:
             return "Invalid URL provided."
-
-        short_code = short_url.split("/")[-1]
-
+        
+        short_code = short_url.split('/')[-1]
+        cache_key = f"url_cache:{short_code}"
+        # 1. Try Redis cache first
+        cached_url = self.redis.get(cache_key) # type: ignore
+        if cached_url:
+            logger.info(f"Cache hit for {short_code}")
+            return cached_url
+        
+        logger.info(f"Cache miss for {short_code}")
+    
         with get_session(self.Session) as session:
             entry = session.query(URLMap).filter_by(short_code=short_code).first()
 
@@ -116,7 +125,9 @@ class URLShortener:
             if entry.expires_at and int(time.time()) > entry.expires_at:
                 session.delete(entry)
                 return "URL has expired."
-
+            
+            # 3. Cache result for future lookups (5 min TTL)
+            self.redis.setex(cache_key, 300, entry.long_url) # type: ignore
             return entry.long_url
 
     def get_all_mappings(self):
