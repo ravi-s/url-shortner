@@ -68,7 +68,7 @@ def require_api_key(f):
         return f(*args, **kwargs)
     return decorated_function
 
-shortener = URLShortener(base_url="http://short.ly/")
+shortener = URLShortener(base_url="http://short.ly/", redis_client=redis_client)
 
 @app.route('/')
 def index():
