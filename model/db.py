@@ -23,10 +23,10 @@ from contextlib import contextmanager
 
 Base = declarative_base()
 
-def get_engine(db_uri="sqlite:///shortener.db"):
+def get_engine(db_uri="sqlite:///data.db"):
     return create_engine(db_uri, echo=False)
 
-def get_session_factory(db_uri="sqlite:///shortener.db"):
+def get_session_factory(db_uri="sqlite:///data.db"):
     engine = get_engine(db_uri)
     return sessionmaker(bind=engine, autocommit=False, autoflush=False, expire_on_commit=False)
 
