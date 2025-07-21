@@ -36,7 +36,7 @@ class URLShortener:
     def _generate_short_code(self, length=6):
         return ''.join(random.choices(string.ascii_letters + string.digits, k=length))
 
-    def shorten_url(self, long_url, expires_in=None):
+    def shorten_url(self, long_url, expires_in = 60):
         """
         Shortens a given long URL and optionally sets an expiration time.
 
