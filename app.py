@@ -119,3 +119,28 @@ def shorten_api():
 
     short_url = shortener.shorten_url(long_url)
     return jsonify({"short_url": short_url})
+
+@app.route('/admin/cleanup', methods=['POST'])
+def trigger_cleanup():
+    """
+        Endpoint to trigger cleanup of expired data via a POST request.
+
+        This route is intended for administrative use and should be protected with a secret token.
+        It expects an 'x-cron-token' header containing the correct secret token. If the token is invalid or missing,
+            the request is rejected with a 401 Unauthorized response.
+
+        Upon successful authentication, it imports and executes the `clean_expired` function from the `cleanup` module
+        to perform the cleanup operation.
+
+    Returns:
+        str: A message indicating the result of the operation.
+        int: HTTP status code (200 for success, 401 for unauthorized).
+    """
+    # Optional: Protect with a secret API key or token
+    token = request.headers.get('x-cron-token')
+    if token != "your_secret_token":
+        return "Unauthorized", 401
+
+    from cleanup import clean_expired
+    clean_expired()
+    return "Cleanup triggered.", 200
