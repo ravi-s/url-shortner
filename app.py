@@ -138,7 +138,7 @@ def trigger_cleanup():
     """
     # Optional: Protect with a secret API key or token
     token = request.headers.get('x-cron-token')
-    if token != "your_secret_token":
+    if token != "example_secret_token":
         return "Unauthorized", 401
 
     from cleanup import clean_expired
