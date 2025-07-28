@@ -53,7 +53,7 @@ class URLShortener:
         created_at = int(time.time())
         expires_at = created_at + expires_in if expires_in else None
 
-        with get_session(self.Session) as session:
+        with get_session() as session:
             # Check if URL already exists
             existing = session.query(URLMap).filter_by(long_url=long_url).first()
             if existing:
@@ -116,13 +116,14 @@ class URLShortener:
         
         logger.info(f"Cache miss for {short_code}")
     
-        with get_session(self.Session) as session:
+        with get_session() as session:
             entry = session.query(URLMap).filter_by(short_code=short_code).first()
 
             if not entry:
                 return "URL not found."
 
-            if entry.expires_at and int(time.time()) > entry.expires_at:
+            expires_at = getattr(entry, "expires_at", None)
+            if expires_at is not None and int(time.time()) > expires_at:
                 session.delete(entry)
                 return "URL has expired."
             
@@ -131,7 +132,7 @@ class URLShortener:
             return entry.long_url
 
     def get_all_mappings(self):
-        with get_session(self.Session) as session:
+        with get_session() as session:
             entries = session.query(URLMap).all()
             return {f"{self.base_url}{entry.short_code}": entry.long_url for entry in entries}
     
