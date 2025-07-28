@@ -16,23 +16,26 @@ Functions:
         A context manager that provides a SQLAlchemy session, ensuring proper
         handling of commit, rollback, and close operations.
 """
-
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 from contextlib import contextmanager
+import os
 
+# Use environment variable if provided, fallback to SQLite
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///data.db")
+
+engine = create_engine(DATABASE_URL, echo=False)
+SessionLocal = sessionmaker(
+    autocommit=False, autoflush=False,
+    bind=engine, expire_on_commit=False
+)
+
+# Base class for all models
 Base = declarative_base()
 
-def get_engine(db_uri="sqlite:///data.db"):
-    return create_engine(db_uri, echo=False)
-
-def get_session_factory(db_uri="sqlite:///data.db"):
-    engine = get_engine(db_uri)
-    return sessionmaker(bind=engine, autocommit=False, autoflush=False, expire_on_commit=False)
-
 @contextmanager
-def get_session(session_factory):
-    session = session_factory()
+def get_session():
+    session = SessionLocal()
     try:
         yield session
         session.commit()
@@ -41,5 +44,9 @@ def get_session(session_factory):
         raise
     finally:
         session.close()
+
+# ✅ One-time schema creation (optional)
+# Comment this out after first run in production
+Base.metadata.create_all(engine)
 
 
