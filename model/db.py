@@ -59,6 +59,6 @@ def get_session():
 
 # ✅ One-time schema creation (optional)
 # Comment this out after first run in production
-Base.metadata.create_all(get_engine())
+# Base.metadata.create_all(get_engine())
 
 
