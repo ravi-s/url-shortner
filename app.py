@@ -4,6 +4,7 @@ import logging
 from logging.handlers import RotatingFileHandler
 from shortener import URLShortener
 from functools import wraps
+from collections import defaultdict
 
 import redis
 from utils.redis_rate_limiter import RedisRateLimiter
@@ -70,6 +71,9 @@ def require_api_key(f):
 
 shortener = URLShortener(base_url="http://short.ly/", redis_client=redis_client)
 
+# In-memory metrics store (simulated Prometheus)
+metrics = defaultdict(int)
+
 @app.route('/')
 def index():
     """Serve the main page with form to shorten URLs."""
@@ -78,6 +82,7 @@ def index():
 
 @app.route('/shorten', methods=['POST'])
 def shorten():
+    metrics['shorten_requests'] += 1  # 👈 Track
     """Create a short URL from form submission."""
     client_ip = request.remote_addr
     if not rate_limiter.is_allowed(client_ip):
@@ -94,6 +99,8 @@ def shorten():
 
 @app.route('/s/<short_code>')
 def show_short_url(short_code):
+
+    metrics['resolve_requests'] += 1  # 👈 Track
 
     """Displays the shortened URL after it's been created."""
     app.logger.info(f"Resolving short code: {short_code}")
@@ -144,3 +151,7 @@ def trigger_cleanup():
     from cleanup import clean_expired
     clean_expired()
     return "Cleanup triggered.", 200
+
+@app.route('/metrics', methods=['GET'])
+def get_metrics():
+    return render_template("metrics.html", metrics=dict(metrics))
