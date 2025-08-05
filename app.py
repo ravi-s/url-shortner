@@ -99,14 +99,25 @@ def shorten():
 
 @app.route('/s/<short_code>')
 def show_short_url(short_code):
+    metrics['resolve_requests'] += 1
 
-    metrics['resolve_requests'] += 1  # 👈 Track
-
-    """Displays the shortened URL after it's been created."""
     app.logger.info(f"Resolving short code: {short_code}")
     entry = shortener.resolve_url(f'{request.host_url}s/{short_code}')
 
+    if isinstance(entry, str) and entry == "URL not found.":
+        metrics['not_found'] += 1
+        return render_template("error.html",
+                               error_title="Short URL Not Found",
+                               error_message=f"The short code '{short_code}' does not exist."), 404
+
+    if isinstance(entry, str) and entry == "URL has expired.":
+        metrics['expired_urls'] += 1
+        return render_template("error.html",
+                               error_title="URL Expired",
+                               error_message=f"The short URL for '{short_code}' has expired."), 410
+
     return render_template('short_url.html', short_code=short_code, resolved=entry)
+
 
 @app.route('/api/shorten', methods=['POST'])
 @require_api_key
