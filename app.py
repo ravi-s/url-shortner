@@ -166,3 +166,27 @@ def trigger_cleanup():
 @app.route('/metrics', methods=['GET'])
 def get_metrics():
     return render_template("metrics.html", metrics=dict(metrics))
+
+@app.route("/test_cache")
+def test_cache():
+    import time
+
+    url = "https://example.com/test-cache"
+    short_url = shortener.shorten_url(url)
+
+    # First resolve
+    start = time.time()
+    resolved1 = shortener.resolve_url(short_url)
+    t1 = round(time.time() - start, 5)
+
+    # Second resolve
+    start = time.time()
+    resolved2 = shortener.resolve_url(short_url)
+    t2 = round(time.time() - start, 5)
+
+    return {
+        "short_url": short_url,
+        "first_resolve": {"value": resolved1, "time": t1},
+        "second_resolve": {"value": resolved2, "time": t2}
+    }
+
