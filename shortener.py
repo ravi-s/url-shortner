@@ -1,3 +1,4 @@
+import json
 import string
 import random
 import time
@@ -80,6 +81,16 @@ class URLShortener:
             session.rollback()
             logger.error("Failed to commit new URL mapping due to IntegrityError.")
             return "Failed to shorten URL due to a database error."
+        
+        # Cache in Redis (write-through)
+        cache_value = json.dumps({
+            "long_url": long_url,
+            "expires_at": expires_at
+        })
+        if self.redis is not None:
+            self.redis.set(short_code, cache_value)
+        else:
+            logger.error("Redis client is not configured. Cannot cache shortened URL.")
 
         return f"{self.base_url}{short_code}"
         
@@ -128,7 +139,17 @@ class URLShortener:
                 return "URL has expired."
             
             # 3. Cache result for future lookups (5 min TTL)
-            self.redis.setex(cache_key, 300, entry.long_url) # type: ignore
+            # self.redis.setex(cache_key, 300, entry.long_url) # type: ignore
+            # Repopulate Redis for next time
+            cache_value = json.dumps({
+                "long_url": entry.long_url,
+                "expires_at": entry.expires_at
+            })
+            if self.redis is not None:
+                self.redis.set(short_code, cache_value)
+            else:
+                logger.error("Redis client is not configured. Cannot cache resolved URL.")
+
             return entry.long_url
 
     def get_all_mappings(self):
